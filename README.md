@@ -66,17 +66,15 @@ node over the LAN allows it to be mounted in a spot outside with good mesh recep
 
 All arguments are optional. If an argument is not specified its default value will be used.
 
-- `-i` `--ip-address`: The IP address of the machine running TAK Meshtastic Gateway. Default: TAK Meshtastic Gateway will attempt to automatically find the IP.
-- `-s` `--serial-device`: The serial device of the Meshtastic node (i.e. `COM3` or `/dev/ttyACM0`).
-Cannot be used simultaneously with `--mesh-ip`. Default: TAK Meshtastic Gateway will attempt to automatically determine
-the serial device. Only use this option if TAK Meshtastic Gateway cannot correctly determine it.
-- `-m` `--mesh-ip`: The IP address or DNS name of the gateway Meshtastic node. Cannot be used simultaneously with `--serial-device`
-Default: Uses a serial connection
-- `-c` `--tak-client-ip`: The IP address of the device running the TAK client (ATAK, WinTAK, or iTAK). Default: `localhost`
-- `-t` `--tx-interval`: Minimum time (in seconds) to wait between PLI transmissions from the TAK client to the mesh network.
-This reduces strain on the mesh network. Default: `30`
-- `-l` `--log-file`: Save log messages to a file. Default: `None` (disabled)
-- `-d` `--debug`: Enable debug log messages. Default: `Disabled` Only messages at the `INFO` level or higher will be logged.
+| Flag | Parameter         | Description                                                                                                                                   | Default                                                                                          |
+|------|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `-i` | `--ip-address`    | The private IP address of the machine running TAK Meshtastic Gateway.                                                                         | TAK Meshtastic Gateway will attempt to automatically find the IP of the computer it's running on |
+| `-s` | `--serial-device` | The serial device of the Meshtastic node (i.e. `COM3` or `/dev/ttyACM0`).Cannot be used simultaneously with `--mesh-ip`                       | TAK Meshtastic Gateway will attempt to automatically determine the serial device                 |
+| `-m` | `--mesh-ip`       | The IP address or DNS name of the gateway Meshtastic node. Cannot be used simultaneously with `--serial-device`                               | Uses a serial connection                                                                         |
+| `-c` | `--tak-client-ip` | The IP address of the device running the TAK client (ATAK, WinTAK, or iTAK)                                                                   | `localhost`                                                                                      |
+| `-t` | `--tx-interval`   | Minimum time (in seconds) to wait between PLI transmissions from the TAK client to the mesh network. This reduces strain on the mesh network. | `30`                                                                                             |
+| `-l` | `--log-file`      | Save log messages to a file.                                                                                                                  | `None` (disabled)                                                                                |
+| `-d` | `--debug`         | Enable debug log messages                                                                                                                     | Default: `Disabled` Only messages at the `INFO` level or higher will be logged                   |
 
 ## Permissions
 
