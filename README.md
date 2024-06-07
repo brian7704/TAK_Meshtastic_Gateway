@@ -62,6 +62,13 @@ In most scenarios, the user will run TAK Meshtastic Gateway on the same computer
 can either be connected to the same computer via USB, or be on the same LAN as the computer. Connecting to the Meshtastic
 node over the LAN allows it to be mounted in a spot outside with good mesh reception while the computer is inside.
 
+## Meshtastic Node Configuration
+
+The Meshtastic node should be set to the TAK role. TAK Meshtastic Gateway will automatically change the node's long name 
+to the TAK client's callsign and the short name to the last four characters of the TAK client's UID. This ensures that 
+the callsign shows up correctly for mesh users who are only using the Meshtastic app and not a TAK client.
+TAK Meshtastic Gateway will also update the Meshtastic node's location with the location of the EUD.
+
 ## Usage
 
 All arguments are optional. If an argument is not specified its default value will be used.
