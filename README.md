@@ -74,7 +74,7 @@ All arguments are optional. If an argument is not specified its default value wi
 | `-c` | `--tak-client-ip` | The IP address of the device running the TAK client (ATAK, WinTAK, or iTAK)                                                                   | `localhost`                                                                                      |
 | `-t` | `--tx-interval`   | Minimum time (in seconds) to wait between PLI transmissions from the TAK client to the mesh network. This reduces strain on the mesh network. | `30`                                                                                             |
 | `-l` | `--log-file`      | Save log messages to a file.                                                                                                                  | `None` (disabled)                                                                                |
-| `-d` | `--debug`         | Enable debug log messages                                                                                                                     | Default: `Disabled` Only messages at the `INFO` level or higher will be logged                   |
+| `-d` | `--debug`         | Enable debug log messages                                                                                                                     | `Disabled` Only messages at the `INFO` level or higher will be logged                            |
 
 ## Permissions
 
@@ -82,7 +82,7 @@ When the Meshtastic node is connected via USB, TAK Meshtastic Gateway needs to b
 and in an administrator PowerShell or Command Prompt. Connecting to the Meshtastic node via the network does not require
 elevated permissions.
 
-## Example Scenarios
+## Example Usage Scenarios
 
 ### Scenario 1
 
