@@ -1,11 +1,11 @@
 import argparse
 import sys
 import traceback
-
+from dm_socket_thread import DMSocketThread
 from bs4 import BeautifulSoup
 from xml.etree.ElementTree import Element, SubElement, tostring
-from proto import atak_pb2
-from meshtastic import portnums_pb2, mesh_pb2, protocols
+#from proto import atak_pb2
+from meshtastic import portnums_pb2, mesh_pb2, atak_pb2, protocols
 import meshtastic.serial_interface
 import meshtastic.tcp_interface
 from pubsub import pub
@@ -40,15 +40,14 @@ sa_multicast_sensor_data_in = ("239.5.5.55", 7171)  # UDP
 
 class TAKMeshtasticGateway:
     def __init__(self, ip=None, serial_device=None, mesh_ip=None, tak_client_ip="localhost", tx_interval=30,
-                 log_file=None, debug=False):
-        print("tak ip " + str(tak_client_ip))
+                 dm_port=4243, log_file=None, debug=False):
         self.meshtastic_devices = {}
         self.node_names = {}
         self.tak_clients = {}
         self.chat_sock = None
         self.sa_multicast_sock = None
-        self.dm_sock = None
         self.ip = ip
+        self.dm_port = dm_port
         self.serial_device = serial_device
         self.mesh_ip = mesh_ip
         self.tx_interval = tx_interval
@@ -86,6 +85,8 @@ class TAKMeshtasticGateway:
         pub.subscribe(self.on_connection_lost, "meshtastic.connection.established.lost")
         self.connect_to_meshtastic_device()
 
+        self.dm_sock = DMSocketThread(self.logger, self.interface)
+
     def connect_to_meshtastic_device(self):
         if self.mesh_ip:
             self.interface = meshtastic.tcp_interface.TCPInterface(self.mesh_ip)
@@ -118,7 +119,7 @@ class TAKMeshtasticGateway:
                                         'platform': 'Meshtastic', 'os': 'Meshtastic',
                                         'macaddr': self.meshtastic_devices[from_id]['macaddr'],
                                         'meshtastic_id': self.meshtastic_devices[from_id]['meshtastic_id']})
-            SubElement(detail, 'contact',{'callsign': self.meshtastic_devices[from_id]['long_name'], 'endpoint': f'{self.ip}:4243:tcp'})
+            SubElement(detail, 'contact',{'callsign': self.meshtastic_devices[from_id]['long_name'], 'endpoint': f'{self.ip}:{self.dm_port}:tcp'})
             SubElement(detail, 'uid', {'Droid': self.meshtastic_devices[from_id]['long_name']})
             SubElement(detail, 'precisionlocation', {'altsrc': 'GPS', 'geopointsrc': 'GPS'})
             SubElement(detail, 'status', {'battery': str(self.meshtastic_devices[from_id]['battery'])})
@@ -231,8 +232,8 @@ class TAKMeshtasticGateway:
             uid = unishox2.decompress(pb.contact.device_callsign, len(pb.contact.device_callsign))
             callsign = unishox2.decompress(pb.contact.callsign, len(pb.contact.callsign))
         elif pb.HasField('contact') and not pb.is_compressed:
-            uid = pb.contact.device_callsign.decode('utf-8')
-            callsign = pb.contact.callsign.decode('uft-8')
+            uid = pb.contact.device_callsign
+            callsign = pb.contact.callsign
         else:
             self.logger.warning("Got an ATAK_PLUGIN packet without the contact field")
             self.logger.warning(pb)
@@ -312,7 +313,7 @@ class TAKMeshtasticGateway:
 
         try:
             if event is not None:
-                self.logger.debug(f"Sending {tostring(event)}")
+                self.logger.info(f"Sending {tostring(event)}")
                 self.socket_client.send(tostring(event))
         except BaseException as e:
             self.logger.error(str(e))
@@ -401,11 +402,7 @@ class TAKMeshtasticGateway:
             self.sa_multicast_sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.ip))
             self.sa_multicast_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(sa_multicast_in[0]) + socket.inet_aton(self.ip))
 
-        # self.dm_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.dm_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # self.dm_sock.bind((self.ip, 4243))
-        # self.dm_sock.listen(1)
-        # self.dm_sock.accept()
+        self.dm_sock.start()
 
         while True:
             data = None
@@ -415,6 +412,7 @@ class TAKMeshtasticGateway:
                     data = s.recv(4096)
             except KeyboardInterrupt:
                 self.logger.info("Exiting....")
+                self.dm_sock.stop()
                 self.interface.close()
                 break
 
@@ -428,7 +426,7 @@ class TAKMeshtasticGateway:
                         continue
 
                 if parsed_data and parsed_data.cotEvent.type == 'b-t-f':
-                    xml = "<chat>" + parsed_data.cotEvent.detail.xmlDetail + "</chat>"
+                    xml = "<detail>" + parsed_data.cotEvent.detail.xmlDetail + "</detail>"
                     soup = BeautifulSoup(xml, 'xml')
                     chat = soup.find("__chat")
                     chatroom = chat.attrs['chatroom']
@@ -451,7 +449,7 @@ class TAKMeshtasticGateway:
                         tak_packet.group.team = self.tak_clients[sender_uid]['group_name']
                         tak_packet.group.role = self.tak_clients[sender_uid]['group_role']
                         tak_packet.status.battery = self.tak_clients[sender_uid]['battery']
-                        tak_packet.chat.message = message
+                        tak_packet.chat.message, size = unishox2.compress(message)
                         tak_packet.chat.to = receiver_uid
                         self.interface.sendData(tak_packet, portNum=portnums_pb2.PortNum.ATAK_PLUGIN)
                         self.logger.info("Sent ATAK GeoChat to the mesh")
@@ -475,7 +473,7 @@ class TAKMeshtasticGateway:
                         contact = parsed_data.cotEvent.detail.contact
                         if not self.tak_clients[uid]['callsign']:
                             self.tak_clients[uid]['callsign'] = contact.callsign
-                            self.interface.localNode.setOwner(contact.callsign, uid[-4:])
+                            self.interface.localNode.setOwner(f"{contact.callsign} Mesh Node", uid[-4:])
 
                     if parsed_data.cotEvent.detail.HasField("takv"):
                         takv = parsed_data.cotEvent.detail.takv
@@ -540,6 +538,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--tx-interval', help='Minimum time to wait in seconds before sending PLI to the mesh',
                         default=30)
     parser.add_argument('-l', '--log-file', help='Save log messages to the specified file', default=None)
+    parser.add_argument('-p', '--dm-socket-port', help='Port to listen on for DMs', default=4243)
     parser.add_argument('-d', '--debug', help='Enable debug logging', action='store_true')
     args = parser.parse_args()
 
@@ -563,5 +562,5 @@ if __name__ == '__main__':
         sys.exit()
 
     tak_meshtastic_gateway = TAKMeshtasticGateway(args.ip_address, args.serial_device, args.mesh_ip, args.tak_client_ip,
-                                                  args.tx_interval, args.log_file, args.debug)
+                                                  args.tx_interval, args.dm_socket_port, args.log_file, args.debug)
     tak_meshtastic_gateway.main()
