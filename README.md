@@ -1,3 +1,5 @@
+Join us on the OpenTAKServer [Discord server](https://discord.gg/6uaVHjtfXN)
+
 # TAK Meshtastic Gateway
 
 TAK Meshtastic Gateway listens for multicast data from TAK clients (ATAK, WinTAK, and iTAK) and forwards it to
@@ -15,7 +17,12 @@ the Meshtastic app and vice versa.
 - Send and receive chat messages between the TAK client and Meshtastic app
 
 TAK Meshtastic Gateway currently only supports sending and receiving chat and PLI messages. Other data types such as
-data packages, markers, images, etc, are not supported due to the limited bandwidth of Meshtastic networks. 
+data packages, markers, images, etc, are not supported due to the limited bandwidth of Meshtastic networks.
+
+## Known Issues
+
+There is a bug in the takproto library which causes an exception in TAK Meshtastic Gateway when parsing XML CoT data.
+There is a [PR](https://github.com/snstac/takproto/pull/16) that will fix the issue once it is merged.
 
 ## Installation
 
