@@ -86,8 +86,8 @@ All arguments are optional. If an argument is not specified its default value wi
 ## Permissions
 
 When the Meshtastic node is connected via USB, TAK Meshtastic Gateway needs to be run as root (or via `sudo`) in Linux
-and in an administrator PowerShell or Command Prompt. Connecting to the Meshtastic node via the network does not require
-elevated permissions.
+and in an administrator PowerShell or Command Prompt in Windows. Connecting to the Meshtastic node via the network does
+not require elevated permissions.
 
 ## Example Usage Scenarios
 
