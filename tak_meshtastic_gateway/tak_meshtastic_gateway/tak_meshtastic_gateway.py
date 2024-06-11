@@ -525,7 +525,7 @@ class TAKMeshtasticGateway:
                         self.logger.debug("Not sending packet to Meshtastic")
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         prog='TAK Meshtastic Gateway',
         description='Listens for multicast messages from TAK clients and forwards them to a Meshtastic network and vice-versa')
@@ -563,3 +563,7 @@ if __name__ == '__main__':
     tak_meshtastic_gateway = TAKMeshtasticGateway(args.ip_address, args.serial_device, args.mesh_ip, args.tak_client_ip,
                                                   args.tx_interval, args.dm_socket_port, args.log_file, args.debug)
     tak_meshtastic_gateway.main()
+
+
+if __name__ == '__main__':
+    main()
