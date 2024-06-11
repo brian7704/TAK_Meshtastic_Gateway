@@ -4,7 +4,6 @@ import traceback
 from dm_socket_thread import DMSocketThread
 from bs4 import BeautifulSoup
 from xml.etree.ElementTree import Element, SubElement, tostring
-#from proto import atak_pb2
 from meshtastic import portnums_pb2, mesh_pb2, atak_pb2, protocols
 import meshtastic.serial_interface
 import meshtastic.tcp_interface

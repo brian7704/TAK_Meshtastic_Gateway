@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "TAKMeshtasticGateway"
+version = "0.0.0"
+description = "Send and receive data from ATAK, WinTAK, or iTAK over Meshtastic"
+authors = ["OpenTAKServer <opentakserver@gmail.com>"]
+readme = "README.md"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/brian7704/TAK_Meshtastic_Gateway"
+documentation = "https://docs.opentakserver.io"
+
+[tool.poetry.dependencies]
+beautifulsoup4 = "4.12.3"
+meshtastic = "2.3.11"
+google-cloud-pubsub = "2.21.3"
+takproto = "2.1.1"
+colorlog = "6.8.2"
+unishox2-py3 = "1.0.0"
+netifaces2 = "0.0.22"
