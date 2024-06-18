@@ -19,10 +19,17 @@ the Meshtastic app and vice versa.
 TAK Meshtastic Gateway currently only supports sending and receiving chat and PLI messages. Other data types such as
 data packages, markers, images, etc, are not supported due to the limited bandwidth of Meshtastic networks.
 
+## Python Requirements
+
+Due to an issue with the unishox2-py3 package, Windows requires Python version 3.12. Linux and macOS will work with Python
+versions 3.8 and up.
+
 ## Known Issues
 
 There is a bug in the takproto library which causes an exception in TAK Meshtastic Gateway when parsing XML CoT data.
-There is a [PR](https://github.com/snstac/takproto/pull/16) that will fix the issue once it is merged.
+There is a [PR](https://github.com/snstac/takproto/pull/16) that will fix the issue once it is merged. Until it is merged,
+TAK Meshtastic Gateway will install takproto from the GitHub PR instead of PyPI.
+
 
 ## Installation
 
@@ -76,7 +83,7 @@ All arguments are optional. If an argument is not specified its default value wi
 | Flag | Parameter          | Description                                                                                                                                   | Default                                                                                          |
 |------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
 | `-i` | `--ip-address`     | The private IP address of the machine running TAK Meshtastic Gateway.                                                                         | TAK Meshtastic Gateway will attempt to automatically find the IP of the computer it's running on |
-| `-s` | `--serial-device`  | The serial device of the Meshtastic node (i.e. `COM3` or `/dev/ttyACM0`).Cannot be used simultaneously with `--mesh-ip`                       | TAK Meshtastic Gateway will attempt to automatically determine the serial device                 |
+| `-s` | `--serial-device`  | The serial device of the Meshtastic node (i.e. `COM3` or `/dev/ttyACM0`). Cannot be used simultaneously with `--mesh-ip`                      | TAK Meshtastic Gateway will attempt to automatically determine the serial device                 |
 | `-m` | `--mesh-ip`        | The IP address or DNS name of the gateway Meshtastic node. Cannot be used simultaneously with `--serial-device`                               | Uses a serial connection                                                                         |
 | `-c` | `--tak-client-ip`  | The IP address of the device running the TAK client (ATAK, WinTAK, or iTAK)                                                                   | `localhost`                                                                                      |
 | `-p` | `--dm-socket-port` | TCP Port to listen on for DMs                                                                                                                 | `4243`                                                                                           |
@@ -87,7 +94,7 @@ All arguments are optional. If an argument is not specified its default value wi
 ## Permissions
 
 When the Meshtastic node is connected via USB, TAK Meshtastic Gateway needs to be run as root (or via `sudo`) in Linux
-and in an administrator PowerShell or Command Prompt in Windows. Connecting to the Meshtastic node via the network does
+and in an administrator PowerShell or Command Prompt in Windows. Connecting to the Meshtastic node via TCP does
 not require elevated permissions.
 
 ## Example Usage Scenarios
@@ -112,5 +119,5 @@ the node's actual IP (i.e. `192.168.1.10`)
 - ATAK or iTAK on a mobile device connected to a Wi-Fi network
 - Meshtastic node connected to the same network
 - TAK Meshtastic Gateway running on a computer or VM on the same network
-- Command: `python3 tak_meshtastic_gateway.py --mesh-ip MESHTASTIC_NODE_IP --tak-client-ip TAK_CLIENT_IP` Note: Substitude
+- Command: `python3 tak_meshtastic_gateway.py --mesh-ip MESHTASTIC_NODE_IP --tak-client-ip TAK_CLIENT_IP` Note: Substitute
 `MESHTASTIC_NODE_IP` and `TAK_CLIENT_IP` with their actual IPs (i.e. `192.168.1.10` and `192.168.1.11`)

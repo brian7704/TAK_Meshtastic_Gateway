@@ -9,13 +9,21 @@ repository = "https://github.com/brian7704/TAK_Meshtastic_Gateway"
 documentation = "https://docs.opentakserver.io"
 
 [tool.poetry.dependencies]
+python = [
+    {platform = "win64", version = ">=3.12, <3.13"},
+    {platform = "linux", version = "^3.8"},
+    {platform = "macos", version = "^3.8"}
+]
 beautifulsoup4 = "4.12.3"
 meshtastic = "2.3.11"
-google-cloud-pubsub = "2.21.3"
-takproto = "2.1.1"
+pypubsub = "4.0.3"
 colorlog = "6.8.2"
-unishox2-py3 = "1.0.0"
+unishox2-py3 = [
+    {platform = "linux", version = "1.0.0"},
+    {platform = "win64", url = "https://github.com/brian7704/OpenTAKServer-Installer/raw/master/unishox2_py3-1.0.0-cp312-cp312-win_amd64.whl"}
+]
 netifaces2 = "0.0.22"
+takproto = {git = "https://github.com/snstac/takproto", rev = "refs/pull/16/merge"}
 
 [tool.poetry-dynamic-versioning]
 enable = true
