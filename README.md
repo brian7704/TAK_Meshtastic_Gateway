@@ -28,7 +28,7 @@ versions 3.8 and up.
 
 There is a bug in the takproto library which causes an exception in TAK Meshtastic Gateway when parsing XML CoT data.
 There is a [PR](https://github.com/snstac/takproto/pull/16) that will fix the issue once it is merged. Until it is merged,
-TAK Meshtastic Gateway will install takproto from the GitHub PR instead of PyPI.
+you will need to manually install from the pull request using the installation instructions below.
 
 On Windows, the `unishox2-py3` library fails to build from the source distribution with the command `pip install unishox2-py3`.
 TAK Meshtastic Gateway will instead install [this wheel](https://github.com/brian7704/OpenTAKServer-Installer/blob/master/unishox2_py3-1.0.0-cp312-cp312-win_amd64.whl).
@@ -46,6 +46,7 @@ The unishox2-py3 Python library requires C build tools. In Debian based distros 
 ```shell
 python3 -m venv tak_meshtastic_gateway_venv
 . ./tak_meshtastic_gateway_venv/bin/activate
+pip install git+https://github.com/snstac/takproto@refs/pull/16/merge
 pip install tak-meshtastic-gateway
 ```
 
@@ -54,6 +55,8 @@ pip install tak-meshtastic-gateway
 ```powershell
 python -m venv tak_meshtastic_gateway_venv
 .\tak_meshtastic_gateway_venv\Scripts\activate
+pip install https://github.com/brian7704/OpenTAKServer-Installer/raw/master/unishox2_py3-1.0.0-cp312-cp312-win_amd64.whl
+pip install git+https://github.com/snstac/takproto@refs/pull/16/merge
 pip install tak-meshtastic-gateway
 ```
 
