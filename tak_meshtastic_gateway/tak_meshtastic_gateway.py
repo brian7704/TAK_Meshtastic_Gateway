@@ -1,7 +1,7 @@
 import argparse
 import sys
 import traceback
-from dm_socket_thread import DMSocketThread
+from tak_meshtastic_gateway.dm_socket_thread import DMSocketThread
 from bs4 import BeautifulSoup
 from xml.etree.ElementTree import Element, SubElement, tostring
 from meshtastic import portnums_pb2, mesh_pb2, atak_pb2, protocols
@@ -73,7 +73,7 @@ class TAKMeshtasticGateway:
                 fh = logging.FileHandler(self.log_file)
                 fh.setLevel(self.log_level)
                 fh.setFormatter(logging.Formatter(
-                    "[%(asctime)s] - TAK Meshtastic Gateway[%(process)d] - %(module)s - %(levelname)s - %(message)s"))
+                    "[%(asctime)s] - TAK Meshtastic Gateway[%(process)d] - %(module)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s"))
                 self.logger.addHandler(fh)
             except BaseException as e:
                 self.logger.error(f"Failed to add log file handler: {e}")
@@ -312,7 +312,7 @@ class TAKMeshtasticGateway:
 
         try:
             if event is not None:
-                self.logger.info(f"Sending {tostring(event)}")
+                self.logger.debug(f"Sending {tostring(event)}")
                 self.socket_client.send(tostring(event))
         except BaseException as e:
             self.logger.error(str(e))
@@ -323,6 +323,7 @@ class TAKMeshtasticGateway:
         from_id = f"{from_id:08x}"
         to_id = packet['to']
 
+        self.logger.debug(packet)
         pn = packet['decoded']['portnum']
 
         handler = protocols.get(portnums_pb2.PortNum.Value(packet['decoded']['portnum']))
