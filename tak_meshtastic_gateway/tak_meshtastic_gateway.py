@@ -329,7 +329,6 @@ class TAKMeshtasticGateway:
         if handler is None:
             if packet['decoded']['portnum'] == "ATAK_PLUGIN":
                 try:
-                    self.logger.debug(packet)
                     tak_packet = atak_pb2.TAKPacket()
                     tak_packet.ParseFromString(packet['decoded']['payload'])
                     self.logger.debug(tak_packet)
@@ -372,10 +371,10 @@ class TAKMeshtasticGateway:
                     ip = ipaddress.IPv4Address(addresses[address][0]['addr'])
                     if ip.is_private and not ip.is_loopback and not ip.is_multicast:
                         self.ip = str(ip)
-                        self.logger.info("Your IP address is {}".format(self.ip))
+                        self.logger.info(f"Your IP address is {self.ip}")
                         break
                 except ValueError:
-                    self.logger.debug("{} is not an IPv4 address".format(addresses[address][0]['addr']))
+                    self.logger.debug(f"{addresses[address][0]['addr']} is not an IPv4 address")
 
         self.logger.debug(f"The system platform is {platform.system()}")
 
@@ -451,7 +450,7 @@ class TAKMeshtasticGateway:
                         tak_packet.chat.message, size = unishox2.compress(message)
                         tak_packet.chat.to = receiver_uid
                         self.interface.sendData(tak_packet, portNum=portnums_pb2.PortNum.ATAK_PLUGIN)
-                        self.logger.info("Sent ATAK GeoChat to the mesh")
+                        self.logger.info("Sent ATAK GeoChat to Meshtastiic")
 
                 elif parsed_data:
                     uid = parsed_data.cotEvent.uid

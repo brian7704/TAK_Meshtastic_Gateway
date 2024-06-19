@@ -41,9 +41,8 @@ class DMSocketThread(Thread):
                 continue
 
             try:
-                self.logger.info("Receiving data")
                 data = self.connection.recv(4096)
-                self.logger.info(data)
+                self.logger.debug(data)
                 self.connection.close()
             except (ConnectionError, ConnectionResetError) as e:
                 self.logger.warning(e)
@@ -61,7 +60,6 @@ class DMSocketThread(Thread):
                 if not parsed_data:
                     self.logger.warning(f"Failed to parse data: {data}")
                     continue
-            self.logger.warning(parsed_data)
 
             xml = "<details>" + parsed_data.cotEvent.detail.xmlDetail + "</details>"
             details = BeautifulSoup(xml, 'xml')
@@ -73,7 +71,7 @@ class DMSocketThread(Thread):
             if not remarks or not chat or not chatgrp:
                 continue
 
-            self.logger.warning(f"Sending message: {remarks.text}")
+            self.logger.debug(f"Sending message: {remarks.text}")
 
             tak_packet = atak_pb2.TAKPacket()
             tak_packet.contact.callsign = chat.attrs['senderCallsign']
