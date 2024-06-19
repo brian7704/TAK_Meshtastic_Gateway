@@ -42,7 +42,7 @@ class TAKMeshtasticGateway:
                  dm_port=4243, log_file=None, debug=False):
         self.meshtastic_devices = {}
         self.node_names = {}
-        self.tak_clients = {}
+        self.tak_client = {}
         self.chat_sock = None
         self.sa_multicast_sock = None
         self.ip = ip
@@ -82,11 +82,11 @@ class TAKMeshtasticGateway:
         pub.subscribe(self.on_receive, "meshtastic.receive")
         pub.subscribe(self.on_connection, "meshtastic.connection.established")
         pub.subscribe(self.on_connection_lost, "meshtastic.connection.established.lost")
-        self.connect_to_meshtastic_device()
+        self.connect_to_meshtastic_node()
 
         self.dm_sock = DMSocketThread(self.logger, self.interface)
 
-    def connect_to_meshtastic_device(self):
+    def connect_to_meshtastic_node(self):
         if self.mesh_ip:
             self.interface = meshtastic.tcp_interface.TCPInterface(self.mesh_ip)
         else:
@@ -146,13 +146,14 @@ class TAKMeshtasticGateway:
         callsign = from_id
         if from_id in self.meshtastic_devices:
             callsign = self.meshtastic_devices[from_id]['long_name']
+        self.logger.debug(self.meshtastic_devices)
 
+        to_id = f"!{to_id:08x}"
         chatroom = "All Chat Rooms"
-        for meshtastic_device in self.meshtastic_devices:
-            meshtastic_device = self.meshtastic_devices[meshtastic_device]
-            if meshtastic_device['meshtastic_id'] == to_id:
-                chatroom = meshtastic_device['uid']
-                break
+        self.logger.debug(f"to_id: {to_id} mesh id: {self.meshtastic_device_info['user']['id']}")
+        if str(to_id) == str(self.meshtastic_device_info['user']['id']) and self.tak_client:
+            chatroom = self.tak_client['uid']
+        self.logger.debug(f"Chatroom is {chatroom}")
 
         if from_id in self.meshtastic_devices and self.meshtastic_devices[from_id]['uid']:
             from_uid = self.meshtastic_devices[from_id]['uid']
@@ -291,13 +292,16 @@ class TAKMeshtasticGateway:
     def protobuf_to_cot(self, pb, from_id, to_id, portnum):
         event = None
 
-        if from_id not in self.meshtastic_devices:
+        if from_id[0] != "!":
+            from_id = "!" + from_id
+        if from_id != self.meshtastic_device_info['user']['id'] and from_id not in self.meshtastic_devices:
             self.meshtastic_devices[from_id] = {'hw_model': '', 'long_name': '', 'short_name': '', 'macaddr': '',
                                                 'firmware_version': '', 'last_lat': "0.0", 'last_lon': "0.0",
                                                 'meshtastic_id': from_id,
                                                 'battery': 0, 'voltage': 0, 'uptime': 0, 'last_alt': "9999999.0",
                                                 'course': '0.0',
                                                 'speed': '0.0', 'team': 'Cyan', 'role': 'Team Member', 'uid': None}
+            self.dm_sock.add_meshtastic_node(from_id)
 
         if portnum == "MAP_REPORT_APP" or (portnum == "POSITION_APP" and pb.latitude_i):
             event = self.position(pb, from_id, to_id, portnum)
@@ -320,10 +324,20 @@ class TAKMeshtasticGateway:
 
     def on_receive(self, packet, interface):  # called when a packet arrives
         from_id = packet['from']
-        from_id = f"{from_id:08x}"
+        from_id = f"!{from_id:08x}"
+
+        # Ignore messages sent from this Meshtastic device
+        if from_id == self.meshtastic_device_info['user']['id']:
+            return
+
         to_id = packet['to']
 
         self.logger.debug(packet)
+        if 'decoded' not in packet:
+            return
+
+        self.logger.info(f"Got a message from {from_id}")
+
         pn = packet['decoded']['portnum']
 
         handler = protocols.get(portnums_pb2.PortNum.Value(packet['decoded']['portnum']))
@@ -355,11 +369,25 @@ class TAKMeshtasticGateway:
         self.logger.info("Connected to the Meshtastic Device")
         self.meshtastic_connected = True
         self.meshtastic_device_info = interface.getMyNodeInfo()
+        self.logger.debug(self.meshtastic_device_info)
+        nodes = interface.nodes
+        self.logger.debug(nodes)
+        for node in nodes:
+            if interface.nodes[node] != self.meshtastic_device_info:
+                self.meshtastic_devices[node] = {'hw_model': nodes[node]['user']['hwModel'], 'long_name': nodes[node]['user']['longName'],
+                                                 'short_name': nodes[node]['user']['shortName'], 'macaddr': '',
+                                                 'firmware_version': '', 'last_lat': "0.0", 'last_lon': "0.0",
+                                                 'meshtastic_id': node, 'battery': 0, 'voltage': 0, 'uptime': 0,
+                                                 'last_alt': "9999999.0", 'course': '0.0', 'speed': '0.0', 'team': 'Cyan',
+                                                 'role': 'Team Member', 'uid': node}
+                self.dm_sock.add_meshtastic_node(node)
+
+        self.logger.debug(self.meshtastic_devices)
 
     def on_connection_lost(self, interface):
         self.logger.error("Lost connection to the Meshtastic device, attempting to reconnect...")
         self.meshtastic_connected = False
-        self.connect_to_meshtastic_device()
+        self.connect_to_meshtastic_node()
 
     def main(self):
         for interface in netifaces.interfaces():
@@ -383,11 +411,11 @@ class TAKMeshtasticGateway:
         if platform.system() == 'Windows':
             self.chat_sock.bind((self.ip, chat_in[1]))
             self.chat_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.ip))
-            self.chat_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(chat_in[0]) + socket.inet_aton(self.ip))
+            self.chat_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(chat_in[0]) + socket.inet_aton(self.ip) + socket.inet_aton(self.ip))
         else:
             self.chat_sock.bind(chat_in)
             self.chat_sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.ip))
-            self.chat_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(chat_in[0]) + socket.inet_aton(self.ip))
+            self.chat_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(chat_in[0]) + socket.inet_aton(self.ip) + socket.inet_aton(self.ip))
 
         self.sa_multicast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.sa_multicast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
@@ -395,11 +423,11 @@ class TAKMeshtasticGateway:
         if platform.system() == 'Windows':
             self.sa_multicast_sock.bind((self.ip, sa_multicast_in[1]))
             self.sa_multicast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.ip))
-            self.sa_multicast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(sa_multicast_in[0]) + socket.inet_aton(self.ip))
+            self.sa_multicast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(sa_multicast_in[0]) + socket.inet_aton(self.ip) + socket.inet_aton(self.ip))
         else:
             self.sa_multicast_sock.bind(sa_multicast_in)
             self.sa_multicast_sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.ip))
-            self.sa_multicast_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(sa_multicast_in[0]) + socket.inet_aton(self.ip))
+            self.sa_multicast_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(sa_multicast_in[0]) + socket.inet_aton(self.ip) + socket.inet_aton(self.ip))
 
         self.dm_sock.start()
 
@@ -408,7 +436,12 @@ class TAKMeshtasticGateway:
             try:
                 inputready, outputready, exceptready = select.select([self.chat_sock, self.sa_multicast_sock], [], [])
                 for s in inputready:
-                    data = s.recv(4096)
+                    data, sender = s.recvfrom(4096)
+
+                    # Only accept multicast data from one TAK client
+                    if sender[0] != self.ip:
+                        self.logger.warning(f"Got data from {sender[0]}, ignoring")
+                        continue
             except KeyboardInterrupt:
                 self.logger.info("Exiting....")
                 self.dm_sock.stop()
@@ -439,86 +472,99 @@ class TAKMeshtasticGateway:
                     if chatroom == "All Chat Rooms":
                         # Send as a Meshtastic text message so both the Meshtastic app and ATAK Plugin will receive it
                         self.interface.sendText(message)
-                        self.logger.info("Sent text message")
+                        self.logger.info("Sent text message to Meshtastic")
                     else:
                         tak_packet = atak_pb2.TAKPacket()
                         tak_packet.is_compressed = True
                         tak_packet.contact.callsign, size = unishox2.compress(sender_callsign)
                         tak_packet.contact.device_callsign, size = unishox2.compress(sender_uid)
-                        tak_packet.group.team = self.tak_clients[sender_uid]['group_name']
-                        tak_packet.group.role = self.tak_clients[sender_uid]['group_role']
-                        tak_packet.status.battery = self.tak_clients[sender_uid]['battery']
+                        tak_packet.group.team = self.tak_client['group_name']
+                        tak_packet.group.role = self.tak_client['group_role']
+                        tak_packet.status.battery = self.tak_client['battery']
                         tak_packet.chat.message, size = unishox2.compress(message)
                         tak_packet.chat.to = receiver_uid
                         self.interface.sendData(tak_packet, portNum=portnums_pb2.PortNum.ATAK_PLUGIN)
-                        self.logger.info("Sent ATAK GeoChat to Meshtastiic")
+                        self.logger.info("Sent ATAK GeoChat to Meshtastic")
 
                 elif parsed_data:
                     uid = parsed_data.cotEvent.uid
                     if not uid:
                         continue
 
-                    if parsed_data.cotEvent.uid not in self.tak_clients:
-                        self.tak_clients[uid] = {'lat': parsed_data.cotEvent.lat, 'lon': parsed_data.cotEvent.lon,
-                                                 'hae': parsed_data.cotEvent.hae,
-                                                 'ce': parsed_data.cotEvent.ce, 'le': parsed_data.cotEvent.le,
-                                                 'callsign': '', 'device': '', 'platform': '', 'os': '', 'version': '',
-                                                 'group_name': '', 'group_role': '',
-                                                 'course': 0, 'speed': 0, 'battery': 0, 'last_tx_time': 0}
-                    self.interface.sendPosition(latitude=parsed_data.cotEvent.lat, longitude=parsed_data.cotEvent.lon,
-                                                altitude=parsed_data.cotEvent.hae, destinationId=self.interface.localNode.nodeNum)
+                    if not self.tak_client:
+                        self.tak_client = {'lat': parsed_data.cotEvent.lat, 'lon': parsed_data.cotEvent.lon,
+                                           'hae': parsed_data.cotEvent.hae, 'uid': uid,
+                                           'ce': parsed_data.cotEvent.ce, 'le': parsed_data.cotEvent.le,
+                                           'callsign': '', 'device': '', 'platform': '', 'os': '', 'version': '',
+                                           'group_name': '', 'group_role': '',
+                                           'course': 0, 'speed': 0, 'battery': 0, 'last_tx_time': 0}
+                        self.logger.debug(self.tak_client)
+                    else:
+                        self.tak_client['lat'] = parsed_data.cotEvent.lat
+                        self.tak_client['lon'] = parsed_data.cotEvent.lon
+                        self.tak_client['hae'] = parsed_data.cotEvent.hae
+                        self.tak_client['ce'] = parsed_data.cotEvent.ce
+                        self.tak_client['le'] = parsed_data.cotEvent.le
 
                     if parsed_data.cotEvent.detail.HasField("contact"):
                         contact = parsed_data.cotEvent.detail.contact
-                        if not self.tak_clients[uid]['callsign']:
-                            self.tak_clients[uid]['callsign'] = contact.callsign
+                        if not self.tak_client['callsign']:
+                            self.tak_client['callsign'] = contact.callsign
                             self.interface.localNode.setOwner(f"{contact.callsign} Mesh Node", uid[-4:])
 
                     if parsed_data.cotEvent.detail.HasField("takv"):
                         takv = parsed_data.cotEvent.detail.takv
-                        self.tak_clients[uid]['device'] = takv.device
-                        self.tak_clients[uid]['platform'] = takv.platform
-                        self.tak_clients[uid]['os'] = takv.os
-                        self.tak_clients[uid]['version'] = takv.version
+                        self.tak_client['device'] = takv.device
+                        self.tak_client['platform'] = takv.platform
+                        self.tak_client['os'] = takv.os
+                        self.tak_client['version'] = takv.version
 
                     if parsed_data.cotEvent.detail.HasField("group"):
                         group = parsed_data.cotEvent.detail.group
-                        self.tak_clients[uid]['group_name'] = group.name
-                        self.tak_clients[uid]['group_role'] = group.role
+                        self.tak_client['group_name'] = group.name
+                        self.tak_client['group_role'] = group.role
 
                     if parsed_data.cotEvent.detail.HasField("track"):
-                        self.tak_clients[uid]['course'] = parsed_data.cotEvent.detail.track.course
-                        self.tak_clients[uid]['speed'] = parsed_data.cotEvent.detail.track.speed
+                        self.tak_client['course'] = parsed_data.cotEvent.detail.track.course
+                        self.tak_client['speed'] = parsed_data.cotEvent.detail.track.speed
 
                     if parsed_data.cotEvent.detail.HasField("status"):
-                        self.tak_clients[uid]['battery'] = parsed_data.cotEvent.detail.status.battery
+                        self.tak_client['battery'] = parsed_data.cotEvent.detail.status.battery
 
-                    if time.time() - self.tak_clients[uid]['last_tx_time'] >= self.tx_interval:
+                    if time.time() - self.tak_client['last_tx_time'] >= self.tx_interval:
+                        if self.meshtastic_connected:
+                            # Send as a Meshtastic protobuf to show up in the Meshtastic app
+                            self.logger.info("Sending position to Meshtastic")
+                            self.interface.sendPosition(latitude=parsed_data.cotEvent.lat,
+                                                        longitude=parsed_data.cotEvent.lon,
+                                                        altitude=parsed_data.cotEvent.hae)
+
+                        # Send as a TAKPacket to show up in ATAK
                         atak_packet = atak_pb2.TAKPacket()
-                        if self.tak_clients[uid]['group_name']:
-                            atak_packet.group.team = self.tak_clients[uid]['group_name'].replace(" ", "_")
+                        if self.tak_client['group_name']:
+                            atak_packet.group.team = self.tak_client['group_name'].replace(" ", "_")
 
-                        if self.tak_clients[uid]['group_role']:
-                            atak_packet.group.role = self.tak_clients[uid]['group_role'].replace(" ", "")
+                        if self.tak_client['group_role']:
+                            atak_packet.group.role = self.tak_client['group_role'].replace(" ", "")
 
-                        atak_packet.status.battery = self.tak_clients[uid]['battery']
+                        atak_packet.status.battery = self.tak_client['battery']
 
                         pli = atak_pb2.PLI()
-                        pli.latitude_i = int(self.tak_clients[uid]['lat'] / .0000001)
-                        pli.longitude_i = int(self.tak_clients[uid]['lon'] / .0000001)
-                        pli.altitude = int(self.tak_clients[uid]['hae'])
-                        pli.speed = int(self.tak_clients[uid]['speed'])
-                        pli.course = int(self.tak_clients[uid]['course'])
+                        pli.latitude_i = int(self.tak_client['lat'] / .0000001)
+                        pli.longitude_i = int(self.tak_client['lon'] / .0000001)
+                        pli.altitude = int(self.tak_client['hae'])
+                        pli.speed = int(self.tak_client['speed'])
+                        pli.course = int(self.tak_client['course'])
                         atak_packet.pli.CopyFrom(pli)
 
                         contact = atak_pb2.Contact()
-                        contact.callsign = self.tak_clients[uid]['callsign'].encode()
+                        contact.callsign = self.tak_client['callsign'].encode()
                         contact.device_callsign = uid.encode()
                         atak_packet.contact.CopyFrom(contact)
 
                         if self.meshtastic_connected:
                             self.interface.sendData(atak_packet, portNum=portnums_pb2.PortNum.ATAK_PLUGIN)
-                            self.tak_clients[uid]['last_tx_time'] = time.time()
+                            self.tak_client['last_tx_time'] = time.time()
                             self.logger.info("Sent ATAK packet to Meshtastic")
                             self.logger.debug(atak_packet)
                     else:

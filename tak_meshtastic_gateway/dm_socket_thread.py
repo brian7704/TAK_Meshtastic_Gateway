@@ -16,6 +16,7 @@ class DMSocketThread(Thread):
         self.logger = logger
         self.connection = None
         self.connection_address = None
+        self.meshtastic_nodes = []
 
     def run(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -71,16 +72,26 @@ class DMSocketThread(Thread):
             if not remarks or not chat or not chatgrp:
                 continue
 
-            self.logger.debug(f"Sending message: {remarks.text}")
+            self.logger.debug(f"Sending message: {remarks.text} to {chat.attrs['id']}")
 
-            tak_packet = atak_pb2.TAKPacket()
-            tak_packet.contact.callsign = chat.attrs['senderCallsign']
-            tak_packet.contact.device_callsign = chatgrp.attrs['uid0']
-            tak_packet.chat.message = remarks.text
-            tak_packet.chat.to = chat.attrs['id']
+            # DM to a node with the Meshtastic app
+            if chat.attrs['id'] in self.meshtastic_nodes:
+                self.meshtastic_interface.sendText(text=remarks.text, destinationId=chat.attrs['id'])
+            # DM to a node running the ATAK plugin
+            else:
+                tak_packet = atak_pb2.TAKPacket()
+                tak_packet.contact.callsign = chat.attrs['senderCallsign']
+                tak_packet.contact.device_callsign = chatgrp.attrs['uid0']
+                tak_packet.chat.message = remarks.text
+                tak_packet.chat.to = chat.attrs['id']
 
-            self.meshtastic_interface.sendData(tak_packet, portNum=portnums_pb2.PortNum.ATAK_PLUGIN)
-            self.logger.debug(tak_packet)
+                self.meshtastic_interface.sendData(tak_packet, portNum=portnums_pb2.PortNum.ATAK_PLUGIN)
+                self.logger.debug(tak_packet)
+
+    def add_meshtastic_node(self, node_id):
+        if node_id not in self.meshtastic_nodes:
+            self.logger.debug(f"Adding {node_id}")
+            self.meshtastic_nodes.append(node_id)
 
     def stop(self):
         self.logger.warning("Shutting down")
