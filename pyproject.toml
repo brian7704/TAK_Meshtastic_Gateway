@@ -19,10 +19,7 @@ lxml = "5.2.2"
 meshtastic = "2.3.11"
 pypubsub = "4.0.3"
 colorlog = "6.8.2"
-unishox2-py3 = [
-    {platform = "linux", version = "1.0.0"},
-    {platform = "win64", url = "https://github.com/brian7704/OpenTAKServer-Installer/raw/master/unishox2_py3-1.0.0-cp312-cp312-win_amd64.whl"}
-]
+unishox2-py3 = "1.0.0"
 netifaces2 = "0.0.22"
 takproto = {git = "https://github.com/snstac/takproto", rev = "refs/pull/16/merge"}
 
