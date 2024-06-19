@@ -15,6 +15,7 @@ python = [
     {platform = "macos", version = "^3.8"}
 ]
 beautifulsoup4 = "4.12.3"
+lxml = "5.2.2"
 meshtastic = "2.3.11"
 pypubsub = "4.0.3"
 colorlog = "6.8.2"

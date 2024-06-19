@@ -49,6 +49,7 @@ class TAKMeshtasticGateway:
         self.dm_port = dm_port
         self.serial_device = serial_device
         self.mesh_ip = mesh_ip
+        self.tak_client_ip = tak_client_ip
         self.tx_interval = tx_interval
         self.log_file = log_file
         self.log_level = logging.DEBUG if debug else logging.INFO
@@ -411,11 +412,11 @@ class TAKMeshtasticGateway:
         if platform.system() == 'Windows':
             self.chat_sock.bind((self.ip, chat_in[1]))
             self.chat_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.ip))
-            self.chat_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(chat_in[0]) + socket.inet_aton(self.ip) + socket.inet_aton(self.ip))
+            self.chat_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(chat_in[0]) + socket.inet_aton(self.ip))
         else:
             self.chat_sock.bind(chat_in)
             self.chat_sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.ip))
-            self.chat_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(chat_in[0]) + socket.inet_aton(self.ip) + socket.inet_aton(self.ip))
+            self.chat_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(chat_in[0]) + socket.inet_aton(self.ip))
 
         self.sa_multicast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.sa_multicast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
@@ -423,11 +424,11 @@ class TAKMeshtasticGateway:
         if platform.system() == 'Windows':
             self.sa_multicast_sock.bind((self.ip, sa_multicast_in[1]))
             self.sa_multicast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.ip))
-            self.sa_multicast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(sa_multicast_in[0]) + socket.inet_aton(self.ip) + socket.inet_aton(self.ip))
+            self.sa_multicast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(sa_multicast_in[0]) + socket.inet_aton(self.ip))
         else:
             self.sa_multicast_sock.bind(sa_multicast_in)
             self.sa_multicast_sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.ip))
-            self.sa_multicast_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(sa_multicast_in[0]) + socket.inet_aton(self.ip) + socket.inet_aton(self.ip))
+            self.sa_multicast_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(sa_multicast_in[0]) + socket.inet_aton(self.ip))
 
         self.dm_sock.start()
 
@@ -439,7 +440,7 @@ class TAKMeshtasticGateway:
                     data, sender = s.recvfrom(4096)
 
                     # Only accept multicast data from one TAK client
-                    if sender[0] != self.ip:
+                    if sender[0] != self.ip and sender[0] != self.tak_client_ip:
                         self.logger.warning(f"Got data from {sender[0]}, ignoring")
                         continue
             except KeyboardInterrupt:

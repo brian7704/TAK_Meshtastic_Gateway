@@ -30,38 +30,36 @@ There is a bug in the takproto library which causes an exception in TAK Meshtast
 There is a [PR](https://github.com/snstac/takproto/pull/16) that will fix the issue once it is merged. Until it is merged,
 TAK Meshtastic Gateway will install takproto from the GitHub PR instead of PyPI.
 
+On Windows, the `unishox2-py3` library fails to build from the source distribution with the command `pip install unishox2-py3`.
+TAK Meshtastic Gateway will instead install [this wheel](https://github.com/brian7704/OpenTAKServer-Installer/blob/master/unishox2_py3-1.0.0-cp312-cp312-win_amd64.whl).
+As a result, Python 3.12 is required when running TAK Meshtastic Gateway on Windows.
 
 ## Installation
 
-### Linux
+For installation you only need to create a Python virtual environment, activate the virtual environment, and install using pip.
 
-Steps may differ slightly on some distros
+### Linux/macOS
 
-```bash
-git clone https://github.com/brian7704/TAK_Meshtastic_Gateway.git
-cd TAK_Meshtastic_Gateway
-python3 -m venv venv
-. ./venv/bin/activate
-pip install bs4 meshtastic pubsub takproto colorlog unishox2-py3 netifaces2
+The unishox2-py3 Python library requires C build tools. In Debian based distros (i.e. Ubuntu) they can be installed with
+`apt install build-essential`.
+
+```shell
+python3 -m venv tak_meshtastic_gateway_venv
+. ./tak_meshtastic_gateway_venv/bin/activate
+pip install tak-meshtastic-gateway
 ```
 
 ### Windows
 
-These instructions assume you already have git and Python installed. In a future release there will be a binary made
-with PyInstaller which won't require git or Python to be installed.
-
-```bash
-git clone https://github.com/brian7704/TAK_Meshtastic_Gateway.git
-cd TAK_Meshtastic_Gateway
-python -m venv venv
-.\venv\Scripts\activate.bat
-pip install bs4 meshtastic pubsub takproto colorlog unishox2-py3 netifaces2
+```powershell
+python -m venv tak_meshtastic_gateway_venv
+.\tak_meshtastic_gateway_venv\Scripts\activate
+pip install tak-meshtastic-gateway
 ```
 
-### MacOS
+## Usage
 
-TAK Meshtastic Gateway is untested on MacOS but should work fine. Try the Linux installation instructions and open
-an issue to let us know if there are any problems.
+When your virtual environment active, run the `tak-meshtastic-gateway` command
 
 ## Architecture
 
@@ -73,8 +71,20 @@ node over the LAN allows it to be mounted in a spot outside with good mesh recep
 
 The Meshtastic node should be set to the TAK role. TAK Meshtastic Gateway will automatically change the node's long name 
 to the TAK client's callsign and the short name to the last four characters of the TAK client's UID. This ensures that 
-the callsign shows up correctly for mesh users who are only using the Meshtastic app and not a TAK client.
+the callsign shows up correctly for mesh users who are only using the Meshtastic app as well as ATAK plugin users.
 TAK Meshtastic Gateway will also update the Meshtastic node's location with the location of the EUD.
+
+## ATAK Plugin Settings
+
+For best results, use the following settings on devices using the [Meshtastic ATAK Plugin.](https://meshtastic.org/docs/software/integrations/integrations-atak-plugin/).
+You can find the settings in ATAK by clicking the Settings tool -> Tool Preferences -> Specific Tool Preferences ->
+Meshtastic Preferences.
+
+- Show all Meshtastic devices: On
+- Don't sshow Meshtastic devices without GPS: On
+- Do not show your local Meshtastic device: On
+
+The rest of the settings can be changed as needed.
 
 ## Usage
 
@@ -104,14 +114,14 @@ not require elevated permissions.
 - WinTAK on a PC
 - Meshtastic node connected to the PC via USB
 - TAK Meshtastic Gateway running on the same PC
-- Command: `python3 tak_meshtastic_gateway.py`
+- Command: `tak_meshtastic_gateway`
 
 ### Scenario 2
 
 - WinTAK on a PC
 - Meshtastic node on the same LAN as the PC
 - TAK Meshtastic Gateway running on the same PC as WinTAK
-- Command: `python3 tak_meshtastic_gateway.py --mesh-ip MESHTASTIC_NODE_IP` Note: Substitute `MESHTASTIC_NODE_IP` with
+- Command: `tak_meshtastic_gateway --mesh-ip MESHTASTIC_NODE_IP` Note: Substitute `MESHTASTIC_NODE_IP` with
 the node's actual IP (i.e. `192.168.1.10`)
 
 ### Scenario 3
@@ -119,5 +129,5 @@ the node's actual IP (i.e. `192.168.1.10`)
 - ATAK or iTAK on a mobile device connected to a Wi-Fi network
 - Meshtastic node connected to the same network
 - TAK Meshtastic Gateway running on a computer or VM on the same network
-- Command: `python3 tak_meshtastic_gateway.py --mesh-ip MESHTASTIC_NODE_IP --tak-client-ip TAK_CLIENT_IP` Note: Substitute
+- Command: `tak_meshtastic_gateway --mesh-ip MESHTASTIC_NODE_IP --tak-client-ip TAK_CLIENT_IP` Note: Substitute
 `MESHTASTIC_NODE_IP` and `TAK_CLIENT_IP` with their actual IPs (i.e. `192.168.1.10` and `192.168.1.11`)
