@@ -1,6 +1,8 @@
 import argparse
 import sys
 import traceback
+
+import tak_meshtastic_gateway
 from tak_meshtastic_gateway.dm_socket_thread import DMSocketThread
 from bs4 import BeautifulSoup
 from xml.etree.ElementTree import Element, SubElement, tostring
@@ -407,6 +409,7 @@ class TAKMeshtasticGateway:
                     self.logger.debug(f"{addresses[address][0]['addr']} is not an IPv4 address")
 
         self.logger.debug(f"The system platform is {platform.system()}")
+        self.logger.info(f"Starting TAK-Meshtastic-Gateway {tak_meshtastic_gateway.__version__}")
 
         self.chat_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         if platform.system() == 'Windows':
