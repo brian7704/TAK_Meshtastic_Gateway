@@ -85,7 +85,9 @@ class TAKMeshtasticGateway:
 
         pub.subscribe(self.on_receive, "meshtastic.receive")
         pub.subscribe(self.on_connection, "meshtastic.connection.established")
-        pub.subscribe(self.on_connection_lost, "meshtastic.connection.established.lost")
+        pub.subscribe(self.on_connection_lost, "meshtastic.connection.lost")
+        pub.subscribe(self.on_log_message, "meshtastic.log")
+        pub.subscribe(self.on_client_notification, "meshtastic.clientNotification")
         self.connect_to_meshtastic_node()
 
         self.dm_sock = DMSocketThread(self.logger, self.interface)
@@ -368,6 +370,12 @@ class TAKMeshtasticGateway:
                 self.protobuf_to_cot(pb, from_id, to_id, pn)
             except:
                 self.logger.error(traceback.format_exc())
+
+    def on_log_message(self, line: str):
+        self.logger.info(line)
+
+    def on_client_notification(self, notification, interface):
+        self.logger.info(f"Client Notification: {notification}")
 
     def on_connection(self, interface, topic=pub.AUTO_TOPIC):
         self.logger.info("Connected to the Meshtastic Device")
