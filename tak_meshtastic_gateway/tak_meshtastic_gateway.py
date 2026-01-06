@@ -6,7 +6,8 @@ import tak_meshtastic_gateway
 from tak_meshtastic_gateway.dm_socket_thread import DMSocketThread
 from bs4 import BeautifulSoup
 from xml.etree.ElementTree import Element, SubElement, tostring
-from meshtastic import portnums_pb2, mesh_pb2, atak_pb2, protocols
+from meshtastic import portnums_pb2, mesh_pb2, protocols
+from meshtastic.protobuf import atak_pb2
 import meshtastic.serial_interface
 import meshtastic.tcp_interface
 from pubsub import pub
