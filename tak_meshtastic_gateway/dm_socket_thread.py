@@ -2,7 +2,8 @@ import socket
 import takproto
 from threading import Thread
 from bs4 import BeautifulSoup
-from meshtastic import portnums_pb2, atak_pb2
+from meshtastic import portnums_pb2
+from meshtastic.protobuf import atak_pb2
 
 
 class DMSocketThread(Thread):
