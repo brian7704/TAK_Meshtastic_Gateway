@@ -114,18 +114,18 @@ class TAKMeshtasticGateway:
         if portnum == "TEXT_MESSAGE_APP" or (portnum == "ATAK_PLUGIN" and pb.HasField('chat')):
             return event, detail
         else:
-            SubElement(detail, 'takv', {'device': self.meshtastic_devices[from_id]['hw_model'],
-                                        'version': self.meshtastic_devices[from_id]['firmware_version'],
+            SubElement(detail, 'takv', {'device': str(self.meshtastic_devices[from_id]['hw_model']),
+                                        'version': str(self.meshtastic_devices[from_id]['firmware_version']),
                                         'platform': 'Meshtastic', 'os': 'Meshtastic',
-                                        'macaddr': self.meshtastic_devices[from_id]['macaddr'],
-                                        'meshtastic_id': self.meshtastic_devices[from_id]['meshtastic_id']})
-            SubElement(detail, 'contact',{'callsign': self.meshtastic_devices[from_id]['long_name'], 'endpoint': f'{self.ip}:{self.dm_port}:tcp'})
-            SubElement(detail, 'uid', {'Droid': self.meshtastic_devices[from_id]['long_name']})
+                                        'macaddr': str(self.meshtastic_devices[from_id]['macaddr']),
+                                        'meshtastic_id': str(self.meshtastic_devices[from_id]['meshtastic_id'])})
+            SubElement(detail, 'contact',{'callsign': str(self.meshtastic_devices[from_id]['long_name']), 'endpoint': f'{self.ip}:{self.dm_port}:tcp'})
+            SubElement(detail, 'uid', {'Droid': str(self.meshtastic_devices[from_id]['long_name'])})
             SubElement(detail, 'precisionlocation', {'altsrc': 'GPS', 'geopointsrc': 'GPS'})
             SubElement(detail, 'status', {'battery': str(self.meshtastic_devices[from_id]['battery'])})
             SubElement(detail, 'track', {'course': '0.0', 'speed': '0.0'})
-            SubElement(detail, '__group', {'name': self.meshtastic_devices[from_id]['team'],
-                                           'role': self.meshtastic_devices[from_id]['role']})
+            SubElement(detail, '__group', {'name': str(self.meshtastic_devices[from_id]['team']),
+                                           'role': str(self.meshtastic_devices[from_id]['role'])})
         return event
 
     def position(self, pb, from_id, to_id, portnum):
