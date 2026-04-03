@@ -356,6 +356,7 @@ class TAKMeshtasticGateway:
                     self.protobuf_to_cot(tak_packet, from_id, to_id, pn)
                 except BaseException as e:
                     self.logger.debug(f"Failed to decode ATAK_PLUGIN protobuf: {e}")
+                    self.logger.error(traceback.format_exc())
             return
 
         if handler.protobufFactory is None:
